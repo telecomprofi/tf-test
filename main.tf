@@ -40,13 +40,6 @@ data "aws_ami" "latest_windows_2016" {
 
 }
 
-// How to use
-/*
-resource "aws_instance" "my_webserver_with_latest_ubuntu_ami" {
-  ami           = data.aws_ami.latest_ubuntu.id
-  instance_type = "t3.micro"
-}
-*/
 
 output "aws_availability_zones_available_az1" {
   value = data.aws_availability_zones.available.names[0]
@@ -78,18 +71,9 @@ output "latest_ubuntu_ami_name" {
   value = data.aws_ami.latest_ubuntu.name
 }
 
-
-
-# name_prefix = "${var.deployment_name}"
-# description = "resource for ${var.deployment_name} deployment."
-
-
-#resource "aws_instance" "instance" {
-#  count = "${var.instance_count}"
-#  tags = {
-#    Name = "${var.deployment_name}-ecs-${count.index}"
-#  }
-#}
+#-------------------------------------------------------------------------------
+# resourcres
+#-------------------------------------------------------------------------------
 
 resource "aws_default_subnet" "default_az1" {
   availability_zone = data.aws_availability_zones.available.names[0]
@@ -107,9 +91,8 @@ resource "aws_default_subnet" "default_az2" {
   }
 }
 
-#--------------------------------------------------------------
 resource "aws_security_group" "nlb-web" {
-  name   = "Dynamic Security Group"
+  name   = "nlb web security group"
   vpc_id = var.vpc_nlb
 
   dynamic "ingress" {
@@ -176,21 +159,10 @@ resource "aws_instance" "nlb-ec2-02" {
 
 
 resource "aws_lb" "nlb" {
-  name_prefix        = "nlb-"
-  internal           = false
-  load_balancer_type = "network"
-  subnets            = ["subnet-0e478f75ccc8a0afd", "subnet-09d02d930b3cb0c37"] # !!!! Hardcoded for 1st test
-
-  # subnet_mapping {
-  #    subnet_id     = aws_subnet.example1.id
-  #    allocation_id = aws_eip.example1.id
-  #  }
-
-  #  subnet_mapping {
-  #    subnet_id     = aws_subnet.example2.id
-  #    allocation_id = aws_eip.example2.id
-  #  }
-
+  name_prefix                = "nlb-"
+  internal                   = false
+  load_balancer_type         = "network"
+  subnets                    = ["subnet-0e478f75ccc8a0afd", "subnet-09d02d930b3cb0c37"] # !!!! Hardcoded for 1st test
   enable_deletion_protection = false
   tags                       = merge(var.common_tags, { Name = "${var.common_tags["Env"]}-${var.deployment_name}-nlb" })
 
@@ -218,21 +190,20 @@ resource "aws_lb_target_group_attachment" "nlb-tg-att-02" {
 
 resource "aws_lb_listener" "nlb" {
   load_balancer_arn = aws_lb.nlb.arn
-  port              = "80"  #"443"
-  protocol          = "TCP" # "TLS"
-  #  certificate_arn   = "arn:aws:iam::187416307283:server-certificate/test_cert_rab3wuqwgja25ct3n4jdj2tzu4"
-  # alpn_policy = "HTTP2Preferred"
+  port              = "443" #"80"  #"443"
+  protocol          = "TLS" #"TCP" # "TLS"
+  certificate_arn   = "arn:aws:acm:us-east-1:612971418332:certificate/aea72a5f-c3c1-435e-b2a2-e7e24a134bdc"
+  alpn_policy       = "HTTP2Preferred"
 
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.nlb-tg.arn
   }
 }
-#
-# resource "aws_vpc" "nlb_vpc" {
-#  cidr_block = "10.0.0.0/16"     # !!!! remove hardcoded NLB VPC ID
-# }
 
+#-------------------------------------------------------------------------------
+# Outputs
+#-------------------------------------------------------------------------------
 output "default_vpc_id" {
   value = aws_default_subnet.default_az1.vpc_id
 }
