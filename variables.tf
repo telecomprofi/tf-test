@@ -4,9 +4,15 @@ variable "region" {
   default     = "us-east-1"
 }
 
+variable "vpc_nlb" {
+  description = "Enter VPC Id in which nlb and instances has to be created"
+  type        = string
+  default     = "vpc-09b1d251ab7e0b54c" #!!!! Remove hardcoded default VPC
+}
+
 variable "deployment_name" {
   description = "Enter the name for current deployment. It will be used to prefix names of the components"
-  #default     = "nlb_example"
+  default     = "XXX"
   # usage in tf code:
   # resource "aws_iam_role" "instance" {
   #   name_prefix = "${var.deployment_name}"
