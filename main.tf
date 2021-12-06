@@ -6,7 +6,8 @@ provider "aws" {
 # Datasources
 #-------------------------------------------------------------------------------
 
-
+data "aws_availability_zones" "available" {
+}
 
 data "aws_ami" "latest_ubuntu" {
   owners      = ["099720109477"]
@@ -46,14 +47,8 @@ resource "aws_instance" "my_webserver_with_latest_ubuntu_ami" {
 }
 */
 
-output "region" {
-  value = var.region
-}
-#-------------------------------------------------------------------------------
-# Outputs based on DataSources
-#-------------------------------------------------------------------------------
-output "latest_windows_2016_ami_id" {
-  value = data.aws_ami.latest_windows_2016.id
+output "aws_availability_zones_available" {
+  value = data.aws_availability_zones.available.names
 }
 
 output "latest_windows_2016_ami_name" {
@@ -91,6 +86,15 @@ output "latest_ubuntu_ami_name" {
 #  }
 #}
 
+resource "aws_default_subnet" "default_az1" {
+  availability_zone = data.aws_availability_zones.available.names[0]
+
+  tags = {
+    Name = "Default subnet for ${var.region}"
+  }
+}
+
+
 resource "aws_instance" "example" {
   ami           = data.aws_ami.latest_ubuntu.id
   instance_type = var.instance_type
@@ -100,6 +104,10 @@ resource "aws_instance" "example" {
     http_endpoint = "enabled"
     http_tokens   = "required"
   }
+}
+
+output "default_vpc_id" {
+  value = aws_default_subnet.default_az1.vpc_id
 }
 
 output "ec2_instance_public_ip" {
