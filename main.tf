@@ -10,16 +10,6 @@ provider "aws" {
 data "aws_availability_zones" "available" {
 }
 
-data "aws_ami" "latest_ubuntu" {
-  owners      = ["099720109477"]
-  most_recent = true
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
-  }
-}
-
-
 data "aws_ami" "latest_amazon_linux" {
   owners      = ["amazon"]
   most_recent = true
@@ -27,48 +17,6 @@ data "aws_ami" "latest_amazon_linux" {
     name   = "name"
     values = ["amzn2-ami-hvm-*-x86_64-gp2"]
   }
-}
-
-
-data "aws_ami" "latest_windows_2016" {
-  owners      = ["amazon"]
-  most_recent = true
-  filter {
-    name   = "name"
-    values = ["Windows_Server-2016-English-Full-Base-*"]
-  }
-
-}
-
-
-output "aws_availability_zones_available_az1" {
-  value = data.aws_availability_zones.available.names[0]
-}
-
-output "aws_availability_zones_available_az2" {
-  value = data.aws_availability_zones.available.names[1]
-}
-
-output "latest_windows_2016_ami_name" {
-  value = data.aws_ami.latest_windows_2016.name
-}
-
-
-output "latest_amazon_linux_ami_id" {
-  value = data.aws_ami.latest_amazon_linux.id
-}
-
-output "latest_amazon_linux_ami_name" {
-  value = data.aws_ami.latest_amazon_linux.name
-}
-
-
-output "latest_ubuntu_ami_id" {
-  value = data.aws_ami.latest_ubuntu.id
-}
-
-output "latest_ubuntu_ami_name" {
-  value = data.aws_ami.latest_ubuntu.name
 }
 
 #-------------------------------------------------------------------------------
@@ -201,33 +149,37 @@ resource "aws_lb_listener" "nlb" {
   }
 }
 
+resource "aws_route53_record" "www" {
+  zone_id = "Z092355622GPYS5PIU7EY" #aws_route53_zone.primary.zone_id
+  name    = "www.telecomprofi.net"
+  type    = "A"
+  alias {
+    name                   = aws_lb.nlb.dns_name
+    zone_id                = aws_lb.nlb.zone_id
+    evaluate_target_health = true
+  }
+
+}
+
 #-------------------------------------------------------------------------------
 # Outputs
 #-------------------------------------------------------------------------------
-output "default_vpc_id" {
-  value = aws_default_subnet.default_az1.vpc_id
-}
 
-output "ec2_instance_01_public_ip" {
+
+output "ec2_01_public_ip" {
   value = aws_instance.nlb-ec2-01.public_ip
-
 }
 
-output "ec2_instance_01_public_dns" {
-  value = aws_instance.nlb-ec2-01.public_dns
-
-}
-
-
-output "ec2_instance_02_public_ip" {
+output "ec2_02_public_ip" {
   value = aws_instance.nlb-ec2-02.public_ip
-
 }
 
-output "ec2_instance_02_public_dns" {
-  value = aws_instance.nlb-ec2-02.public_dns
 
-}
 output "aws_nlb_url" {
   value = aws_lb.nlb.dns_name
+}
+
+
+output "aws_route53_a_record_fqdn" {
+  value = aws_route53_record.www.fqdn
 }
